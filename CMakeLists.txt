@@ -29,8 +29,9 @@ add_subdirectory(3rdparty/Livox-SDK2)
 find_package(PkgConfig)
 pkg_check_modules(APR apr-1)
 
-# Messages
-set(LIVOX_INTERFACES livox_interfaces2)
+# Messages must be generated under the package name because the code includes
+# and publishes them as livox_ros_driver2::msg::...
+set(LIVOX_INTERFACES ${PROJECT_NAME})
 
 rosidl_generate_interfaces(${LIVOX_INTERFACES}
   "msg/CustomPoint.msg"
@@ -42,7 +43,9 @@ rosidl_generate_interfaces(${LIVOX_INTERFACES}
 add_definitions(${PCL_DEFINITIONS})
 
 # Library
-ament_auto_add_library(${PROJECT_NAME} SHARED
+set(LIVOX_DRIVER_LIBRARY ${PROJECT_NAME}_core)
+
+ament_auto_add_library(${LIVOX_DRIVER_LIBRARY} SHARED
   src/livox_ros_driver2.cpp
   src/lddc.cpp
   src/driver_node.cpp
@@ -63,9 +66,9 @@ ament_auto_add_library(${PROJECT_NAME} SHARED
   src/call_back/livox_lidar_callback.cpp
 )
 
-add_dependencies(${PROJECT_NAME} ${LIVOX_INTERFACES}__rosidl_typesupport_cpp)
+add_dependencies(${LIVOX_DRIVER_LIBRARY} ${LIVOX_INTERFACES}__rosidl_typesupport_cpp)
 
-target_include_directories(${PROJECT_NAME} PUBLIC
+target_include_directories(${LIVOX_DRIVER_LIBRARY} PUBLIC
   ${PCL_INCLUDE_DIRS}
   ${APR_INCLUDE_DIRS}
   ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/Livox-SDK2/include
@@ -80,7 +83,7 @@ rosidl_get_typesupport_target(
   "rosidl_typesupport_cpp"
 )
 
-target_link_libraries(${PROJECT_NAME}
+target_link_libraries(${LIVOX_DRIVER_LIBRARY}
   livox_lidar_sdk_shared
   ${cpp_typesupport_target}
   ${PCL_LIBRARIES}
@@ -88,7 +91,7 @@ target_link_libraries(${PROJECT_NAME}
 )
 
 # Node
-rclcpp_components_register_node(${PROJECT_NAME}
+rclcpp_components_register_node(${LIVOX_DRIVER_LIBRARY}
   PLUGIN "livox_ros::DriverNode"
   EXECUTABLE ${PROJECT_NAME}_node
 )
